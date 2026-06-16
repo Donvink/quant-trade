@@ -131,22 +131,22 @@ def main():
         order_by=ORDER_BY
     )
 
-    # 为了保持输出 JSON 中包含详细信息，重新生成 details
+    # 计算一次 RPS，供所有候选股使用
+    returns_dict = {}
+    for s in symbols:
+        d = stock_data.get(s)
+        if d is None:
+            continue
+        d_cut = d[d.index <= current_date]
+        if len(d_cut) < max(RPS_PERIODS):
+            continue
+        returns_dict[s] = calc_returns(d_cut)
+    rps_all = calc_rps_for_all(returns_dict) if returns_dict else {}
+
     details = {}
     for sym in candidates:
-        # 从 stock_data 中提取详细信息
         df = stock_data[sym]
         df_cut = df[df.index <= current_date]
-        # 计算RPS（为了输出）
-        returns_dict = {}
-        for s in symbols:
-            d = stock_data.get(s)
-            if d is None: continue
-            d_cut = d[d.index <= current_date]
-            if len(d_cut) < max(RPS_PERIODS): continue
-            ret = calc_returns(d_cut)
-            returns_dict[s] = ret
-        rps_all = calc_rps_for_all(returns_dict) if returns_dict else {}
         rps_scores = rps_all.get(sym, {})
         latest_turnover = df_cut['volume'].iloc[-1] * df_cut['close'].iloc[-1]
         avg_5d_turnover = (df_cut['volume'] * df_cut['close']).rolling(5).mean().iloc[-1]

@@ -16,17 +16,19 @@
 
 ## 📊 回测表现（2024-04-01 至 2026-03-31）
 
-| 指标 | 数值 |
-|------|------|
-| 初始资金 | $100,000 |
-| 最终资金 | $203,900 |
-| 总收益率 | **103.90%** |
-| 年化收益率 | **41.05%** |
-| 夏普比率 | **1.67** |
-| 最大回撤 | -20.55% |
-| 胜率 | 48.75% |
-| 平均盈利 | +10.64% |
-| 平均亏损 | -6.08% |
+| 指标 | 本策略 | SPY（基准） |
+|------|--------|------------|
+| 初始资金 | $100,000 | $100,000 |
+| 最终资金 | $203,900 | ~$129,000 |
+| 总收益率 | **103.90%** | ~29% |
+| 年化收益率 | **41.05%** | ~14% |
+| 夏普比率 | **1.67** | ~0.9 |
+| 最大回撤 | -20.55% | ~-19% |
+| 胜率 | 48.75% | — |
+| 平均盈利 | +10.64% | — |
+| 平均亏损 | -6.08% | — |
+
+> SPY 数据为近似值。运行以下命令获取精确数字：`python -c "import yfinance as yf; spy = yf.download('SPY', '2024-04-01', '2026-03-31'); print(round((spy['Close'].iloc[-1].item()/spy['Close'].iloc[0].item()-1)*100, 2), '%')"`
 
 ### 资产曲线
 
@@ -102,8 +104,8 @@ git clone https://github.com/Donvink/quant-trade.git
 cd quant-trade
 
 # 创建 conda 环境
-conda create -n openclaw python=3.10 -y
-conda activate openclaw
+conda create -n quant-trade python=3.10 -y
+conda activate quant-trade
 
 # 安装依赖
 pip install -r requirements.txt
@@ -119,13 +121,13 @@ risk:
   stop_loss_pct: -10
   take_profit_pct: 30
   trailing_stop_pct: 10
-  max_hold_days: 25
+  max_hold_days: 10
   min_hold_days: 3
   use_macd_sell: false
 
 # 选股参数
 screener:
-  rps_threshold: 85
+  rps_threshold: 95
   rps_periods: [20, 60, 120]
   max_buy: 3          # 每日最多买入数量
   max_own: 5          # 总持仓上限
@@ -133,8 +135,8 @@ screener:
 
 # IBKR 连接
 ibkr:
-  host: "127.0.0.1"
-  port: 7497          # 模拟盘端口
+  host: "127.0.0.1"  # WSL2 用户需改为 Windows 宿主机 IP（如 172.29.80.1）
+  port: 7497          # 模拟盘端口，实盘改为 7496
   client_id: 1
   timeout: 30
 
@@ -146,14 +148,17 @@ commission: 0.001     # 手续费率 0.1%
 ### 3. 下载历史数据
 
 ```bash
-cd skills/quant-trade/scripts
-python main.py --step update
+# 从项目根目录运行
+python run.py --step update
+
+# 或进入脚本目录运行
+cd skills/quant-trade/scripts && python main.py --step update
 ```
 
 ### 4. 运行回测
 
 ```bash
-python main.py --step backtest
+python run.py --step backtest
 ```
 
 ### 5. 模拟盘交易
@@ -163,10 +168,10 @@ python main.py --step backtest
 
 ```bash
 # 模拟模式（不实际下单）
-python main.py --step trade --dry-run
+python run.py --step trade --dry-run
 
 # 真实模拟交易
-python main.py --step trade
+python run.py --step trade
 ```
 
 ### 6. 每日自动化
@@ -175,20 +180,23 @@ python main.py --step trade
 
 ```bash
 crontab -e
-# 添加以下行（周一至周五 04:30 运行）
-30 4 * * 1-5 cd /path/to/quant-trade/skills/quant-trade/scripts && conda activate openclaw && python main.py --step all >> logs/daily.log 2>&1
+# 添加以下行（周一至周五 04:30 运行，美股收盘后）
+# 将 /path/to/conda 替换为实际的 conda 安装路径
+30 4 * * 1-5 /path/to/conda/envs/quant-trade/bin/python /path/to/quant-trade/skills/quant-trade/scripts/main.py --step all >> /path/to/quant-trade/logs/daily.log 2>&1
 ```
+
+> **注意**：cron 环境中 `conda activate` 不会生效，必须使用 Python 可执行文件的完整路径。通过 `conda activate quant-trade && which python` 获取该路径。
 
 ## 📖 命令说明
 
 | 命令 | 说明 |
 |------|------|
-| `python main.py --step all` | 完整流程（更新数据+选股+交易+监控） |
-| `python main.py --step update` | 仅更新数据 |
-| `python main.py --step screen` | 仅运行选股 |
-| `python main.py --step trade` | 仅执行交易 |
-| `python main.py --step monitor` | 仅运行止损监控 |
-| `python main.py --step backtest` | 运行回测 |
+| `python run.py --step all` | 完整流程（更新数据+选股+交易+监控） |
+| `python run.py --step update` | 仅更新数据 |
+| `python run.py --step screen` | 仅运行选股 |
+| `python run.py --step trade` | 仅执行交易 |
+| `python run.py --step monitor` | 仅运行止损监控 |
+| `python run.py --step backtest` | 运行回测 |
 | `--dry-run` | 模拟模式，不实际下单 |
 | `--force-refresh` | 强制刷新数据 |
 

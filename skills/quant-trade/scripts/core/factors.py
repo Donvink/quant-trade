@@ -3,11 +3,6 @@
 多因子评分：结合成交量、基本面等
 """
 
-from datetime import datetime
-
-import datetime
-
-import yfinance as yf
 import numpy as np
 from core.config import RPS_THRESHOLD
 from core.data_manager import DataManager
@@ -53,5 +48,8 @@ def score_stock(symbol, df, rps_scores, as_of_date, use_fundamentals=False):
     else:
         fundamental_score = 50
 
-    total = rps_avg * 0.7 + vol_score * 0.3
+    if use_fundamentals:
+        total = rps_avg * 0.5 + vol_score * 0.2 + fundamental_score * 0.3
+    else:
+        total = rps_avg * 0.7 + vol_score * 0.3
     return total

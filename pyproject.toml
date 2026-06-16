@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "quant-trade"
+version = "1.0.0"
+description = "RPS-based quantitative trading system for US stocks with backtesting and IBKR live trading"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "pandas",
+    "numpy",
+    "requests",
+    "yfinance",
+    "ib_insync",
+    "pyyaml",
+    "scipy",
+    "pandas_ta",
+    "matplotlib",
+    "joblib",
+    "tqdm",
+    "ibapi",
+]
+
+[project.scripts]
+quant-trade = "main:main"
+
+[tool.setuptools.packages.find]
+where = ["skills/quant-trade/scripts"]

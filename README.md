@@ -16,17 +16,19 @@ A quantitative trading system for US stocks based on RPS (Relative Price Strengt
 
 ## 📊 Backtest Results (2024-04-01 to 2026-03-31)
 
-| Metric | Value |
-|--------|-------|
-| Initial Capital | $100,000 |
-| Final Capital | $203,900 |
-| Total Return | **103.90%** |
-| Annualized Return | **41.05%** |
-| Sharpe Ratio | **1.67** |
-| Max Drawdown | -20.55% |
-| Win Rate | 48.75% |
-| Avg Profit | +10.64% |
-| Avg Loss | -6.08% |
+| Metric | Strategy | SPY (Benchmark) |
+|--------|----------|-----------------|
+| Initial Capital | $100,000 | $100,000 |
+| Final Capital | $203,900 | ~$129,000 |
+| Total Return | **103.90%** | ~29% |
+| Annualized Return | **41.05%** | ~14% |
+| Sharpe Ratio | **1.67** | ~0.9 |
+| Max Drawdown | -20.55% | ~-19% |
+| Win Rate | 48.75% | — |
+| Avg Profit | +10.64% | — |
+| Avg Loss | -6.08% | — |
+
+> SPY figures are approximate. Run `python -c "import yfinance as yf; spy = yf.download('SPY', '2024-04-01', '2026-03-31'); print(round((spy['Close'].iloc[-1].item()/spy['Close'].iloc[0].item()-1)*100, 2), '%')"` for exact numbers.
 
 ### Equity Curve
 
@@ -100,8 +102,8 @@ quant-trade/
 git clone https://github.com/Donvink/quant-trade.git
 cd quant-trade
 
-conda create -n openclaw python=3.10 -y
-conda activate openclaw
+conda create -n quant-trade python=3.10 -y
+conda activate quant-trade
 
 pip install -r requirements.txt
 ```
@@ -115,20 +117,20 @@ risk:
   stop_loss_pct: -10
   take_profit_pct: 30
   trailing_stop_pct: 10
-  max_hold_days: 25
+  max_hold_days: 10
   min_hold_days: 3
   use_macd_sell: false
 
 screener:
-  rps_threshold: 85
+  rps_threshold: 95
   rps_periods: [20, 60, 120]
   max_buy: 3
   max_own: 5
   use_fundamentals: false
 
 ibkr:
-  host: "127.0.0.1"
-  port: 7497
+  host: "127.0.0.1"  # WSL2 users: use the Windows host IP (e.g. 172.29.80.1)
+  port: 7497          # paper trading port; live trading uses 7496
   client_id: 1
   timeout: 30
 
@@ -139,14 +141,17 @@ commission: 0.001
 ### 3. Download Historical Data
 
 ```bash
-cd skills/quant-trade/scripts
-python main.py --step update
+# From project root
+python run.py --step update
+
+# Or from the scripts directory
+cd skills/quant-trade/scripts && python main.py --step update
 ```
 
 ### 4. Run Backtest
 
 ```bash
-python main.py --step backtest
+python run.py --step backtest
 ```
 
 ### 5. Paper Trading
@@ -156,10 +161,10 @@ python main.py --step backtest
 
 ```bash
 # Dry run (no actual orders)
-python main.py --step trade --dry-run
+python run.py --step trade --dry-run
 
 # Live paper trading
-python main.py --step trade
+python run.py --step trade
 ```
 
 ### 6. Daily Automation
@@ -168,20 +173,23 @@ Set up cron job (runs after market close):
 
 ```bash
 crontab -e
-# Add the following line (runs at 04:30 Monday-Friday)
-30 4 * * 1-5 cd /path/to/quant-trade/skills/quant-trade/scripts && conda activate openclaw && python main.py --step all >> logs/daily.log 2>&1
+# Add the following line (runs at 04:30 Monday-Friday, after US market close)
+# Replace /path/to/conda with your actual conda installation path
+30 4 * * 1-5 /path/to/conda/envs/quant-trade/bin/python /path/to/quant-trade/skills/quant-trade/scripts/main.py --step all >> /path/to/quant-trade/logs/daily.log 2>&1
 ```
+
+> **Note**: `conda activate` does not work in cron. Use the full path to the Python executable instead. Find it with: `conda activate quant-trade && which python`
 
 ## 📖 Command Reference
 
 | Command | Description |
 |---------|-------------|
-| `python main.py --step all` | Full workflow (update + screen + trade + monitor) |
-| `python main.py --step update` | Update data only |
-| `python main.py --step screen` | Run screener only |
-| `python main.py --step trade` | Execute trades only |
-| `python main.py --step monitor` | Run stop-loss monitoring only |
-| `python main.py --step backtest` | Run backtest |
+| `python run.py --step all` | Full workflow (update + screen + trade + monitor) |
+| `python run.py --step update` | Update data only |
+| `python run.py --step screen` | Run screener only |
+| `python run.py --step trade` | Execute trades only |
+| `python run.py --step monitor` | Run stop-loss monitoring only |
+| `python run.py --step backtest` | Run backtest |
 | `--dry-run` | Simulation mode, no actual orders |
 | `--force-refresh` | Force refresh data |
 
