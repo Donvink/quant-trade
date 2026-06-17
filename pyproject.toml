@@ -25,7 +25,14 @@ dependencies = [
 ]
 
 [project.scripts]
-quant-trade = "main:main"
+quant-trade = "quant_trade.main:main"
 
 [tool.setuptools.packages.find]
-where = ["skills/quant-trade/scripts"]
+where = ["."]
+include = ["quant_trade*"]
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: requires external services (IBKR, network)",
+    "slow: takes more than a few seconds",
+]

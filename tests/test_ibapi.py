@@ -1,19 +1,26 @@
+"""Tests IBKR connection via ibapi (low-level). Requires TWS/IB Gateway running on port 7497."""
+import threading
+import time
+import pytest
 from ibapi.client import EClient
 from ibapi.wrapper import EWrapper
-import time
 
-class TestApp(EWrapper, EClient):
+
+class _IBApp(EWrapper, EClient):
     def __init__(self):
         EClient.__init__(self, self)
-    
-    def error(self, reqId, code, msg):
-        print(f"Error {code}: {msg}")
-    
+        self.connected = False
+
     def nextValidId(self, orderId):
-        print(f"✅ 连接成功，下一个有效订单ID: {orderId}")
+        self.connected = True
         self.disconnect()
 
-app = TestApp()
-app.connect('172.29.80.1', 7497, clientId=1)
-time.sleep(3)
-app.run()
+
+@pytest.mark.integration
+def test_ibkr_connection_low_level():
+    app = _IBApp()
+    app.connect('127.0.0.1', 7497, clientId=2)
+    thread = threading.Thread(target=app.run, daemon=True)
+    thread.start()
+    thread.join(timeout=10)
+    assert app.connected, "IBKR low-level connection failed (nextValidId not received)"

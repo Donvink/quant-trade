@@ -1,29 +1,45 @@
-#!/usr/bin/env python3
-import subprocess
+"""Integration tests for the full quant-trade pipeline."""
 import sys
+import pytest
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).parent
-SKILL_SCRIPTS = PROJECT_ROOT / "skills" / "quant-trade" / "scripts"
+PROJECT_ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(PROJECT_ROOT / "quant_trade"))
 
-def run_cmd(cmd, description):
-    print(f"\n=== {description} ===")
-    result = subprocess.run(cmd, shell=True, cwd=PROJECT_ROOT)
-    if result.returncode != 0:
-        print(f"❌ {description} 失败")
-        sys.exit(1)
-    else:
-        print(f"✅ {description} 成功")
 
-if __name__ == "__main__":
-    # 1. 下载少量数据
-    run_cmd('python -c "import sys; sys.path.insert(0, str(SKILL_SCRIPTS)); from data_manager import DataManager; from stock_pool import get_sp500_symbols, get_large_cap_pool; dm = DataManager(); dm.download_full_history(get_sp500_symbols()[:5], years_back=1); dm.close()"', "数据下载")
-    # 2. 选股
-    run_cmd(f'python {SKILL_SCRIPTS}/screener.py', "RPS选股")
-    # 3. 回测
-    run_cmd(f'python {SKILL_SCRIPTS}/backtest.py', "回测")
-    # 4. 模拟交易
-    run_cmd(f'python {SKILL_SCRIPTS}/ibkr_client.py --dry-run --order --symbol AAPL --side BUY --quantity 10', "模拟交易")
-    # 5. 风控检查
-    run_cmd(f'python {SKILL_SCRIPTS}/risk_checker.py --status', "风控状态")
-    print("\n🎉 所有测试完成！")
+@pytest.mark.integration
+def test_imports():
+    from core.config import RPS_THRESHOLD, RPS_PERIODS, MAX_BUY, MAX_OWN
+    from core.data_manager import DataManager
+    from core.stock_pool import get_sp500_symbols
+    from analysis.screener import get_candidates_for_date
+    from analysis.backtest import backtest
+    assert RPS_THRESHOLD > 0
+    assert len(RPS_PERIODS) == 3
+
+
+@pytest.mark.integration
+@pytest.mark.slow
+def test_data_download():
+    from core.data_manager import DataManager
+    from core.stock_pool import get_sp500_symbols
+    dm = DataManager()
+    symbols = get_sp500_symbols()[:3]
+    dm.download_full_history(symbols, years_back=1)
+    for sym in symbols:
+        df = dm.get_data(sym)
+        assert not df.empty, f"No data downloaded for {sym}"
+    dm.close()
+
+
+@pytest.mark.integration
+def test_dry_run_trade():
+    import subprocess
+    result = subprocess.run(
+        [sys.executable, str(PROJECT_ROOT / "run.py"), "--step", "trade", "--dry-run"],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert result.returncode == 0, f"dry-run trade failed:\n{result.stderr}"
