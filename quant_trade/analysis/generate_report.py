@@ -80,9 +80,16 @@ def plot_monthly_returns(monthly_returns):
 
 
 def main():
-    start_date = "2024-04-01"
-    end_date   = "2026-03-31"
-    initial_capital = 100_000
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--start', default='2024-04-01')
+    parser.add_argument('--end',   default='2026-03-31')
+    parser.add_argument('--capital', type=float, default=100_000)
+    args = parser.parse_args()
+
+    start_date = args.start
+    end_date   = args.end
+    initial_capital = args.capital
 
     print("Running backtest…")
     symbols = get_sp500_symbols()

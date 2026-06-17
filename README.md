@@ -25,16 +25,16 @@ Tested with **$100K simulated capital over 2 years (2024–2026)**.
 
 | Metric | Strategy | SPY (Benchmark) |
 |--------|----------|-----------------|
-| Period | 2024-04-01 → 2026-03-31 | same |
+| Period | 2024-04-01 → 2026-06-16 | same |
 | Initial Capital | $100,000 | $100,000 |
-| Final Capital | **$289,469** | ~$124,000 |
-| Total Return | **189.47%** | ~24% |
-| CAGR | **67.05%** | ~11% |
-| Sharpe Ratio | **1.64** | ~0.9 |
+| Final Capital | **$455,334** | ~$148,000 |
+| Total Return | **355.33%** | ~48% |
+| CAGR | **93.87%** | ~22% |
+| Sharpe Ratio | **1.97** | ~0.9 |
 | Max Drawdown | -34.23% | ~-19% |
-| Win Rate | 52.48% | — |
-| Avg Win | +13.11% | — |
-| Avg Loss | -7.19% | — |
+| Win Rate | 53.07% | — |
+| Avg Win | +14.53% | — |
+| Avg Loss | -7.29% | — |
 
 > **Disclaimer**: Past performance does not guarantee future results. This is not financial advice. Always paper trade before going live.
 
