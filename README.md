@@ -27,14 +27,14 @@ Tested with **$100K simulated capital over 2 years (2024–2026)**.
 |--------|----------|-----------------|
 | Period | 2024-04-01 → 2026-03-31 | same |
 | Initial Capital | $100,000 | $100,000 |
-| Final Capital | **$217,725** | ~$129,000 |
-| Total Return | **117.72%** | ~29% |
-| Annualized Return | **45.59%** | ~14% |
-| Sharpe Ratio | **1.72** | ~0.9 |
-| Max Drawdown | -23.47% | ~-19% |
-| Win Rate | 51.80% | — |
-| Avg Win | +10.45% | — |
-| Avg Loss | -6.44% | — |
+| Final Capital | **$289,469** | ~$124,000 |
+| Total Return | **189.47%** | ~24% |
+| CAGR | **67.05%** | ~11% |
+| Sharpe Ratio | **1.64** | ~0.9 |
+| Max Drawdown | -34.23% | ~-19% |
+| Win Rate | 52.48% | — |
+| Avg Win | +13.11% | — |
+| Avg Loss | -7.19% | — |
 
 > **Disclaimer**: Past performance does not guarantee future results. This is not financial advice. Always paper trade before going live.
 
