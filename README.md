@@ -1,34 +1,42 @@
-# 🦞 Quant-Trade
+<div align="center">
 
-A quantitative trading system for US stocks based on RPS (Relative Price Strength) multi-factor selection. Supports backtesting, paper trading, and live trading with Interactive Brokers, featuring comprehensive position management and risk control.
+# 📈 Quant-Trade
 
-[中文版](./README-zh.md) | [Documentation](./skills/quant-trade/SKILL.md)
+**RPS-based quantitative trading system for US stocks**
 
-## ✨ Features
+[![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-- **RPS Screening**: Based on 20/60/120-day relative strength ranking
-- **Multi-factor Scoring**: Combines volume and fundamentals (optional)
-- **Dynamic Exit**: Stop loss, trailing stop, MACD death cross, take profit, time stop
-- **Position Management**: Equal weight + max positions + daily purchase limit
-- **Backtesting Engine**: Full historical backtesting with performance analytics
-- **Live Trading**: Interactive Brokers API integration (paper/live)
-- **Data Management**: Local SQLite database with full download and daily incremental updates
+[Features](#features) · [Backtest Results](#backtest-results) · [Quick Start](#quick-start) · [Configuration](#configuration) · [Architecture](#architecture)
 
-## 📊 Backtest Results (2024-04-01 to 2026-03-31)
+</div>
+
+---
+
+## Why
+
+Most retail quant systems are either too simple (buy the dip) or too complex (black-box ML). This one is transparent: it ranks stocks by Relative Price Strength across 20/60/120-day windows, filters by volume and optionally fundamentals, and exits using a layered stop system. Every decision is logged and reproducible.
+
+Tested with **$100K simulated capital over 2 years (2024–2026)**.
+
+---
+
+## Backtest Results
 
 | Metric | Strategy | SPY (Benchmark) |
 |--------|----------|-----------------|
+| Period | 2024-04-01 → 2026-03-31 | same |
 | Initial Capital | $100,000 | $100,000 |
-| Final Capital | $203,900 | ~$129,000 |
-| Total Return | **103.90%** | ~29% |
-| Annualized Return | **41.05%** | ~14% |
-| Sharpe Ratio | **1.67** | ~0.9 |
-| Max Drawdown | -20.55% | ~-19% |
-| Win Rate | 48.75% | — |
-| Avg Profit | +10.64% | — |
-| Avg Loss | -6.08% | — |
+| Final Capital | **$217,725** | ~$129,000 |
+| Total Return | **117.72%** | ~29% |
+| Annualized Return | **45.59%** | ~14% |
+| Sharpe Ratio | **1.72** | ~0.9 |
+| Max Drawdown | -23.47% | ~-19% |
+| Win Rate | 51.80% | — |
+| Avg Win | +10.45% | — |
+| Avg Loss | -6.44% | — |
 
-> SPY figures are approximate. Run `python -c "import yfinance as yf; spy = yf.download('SPY', '2024-04-01', '2026-03-31'); print(round((spy['Close'].iloc[-1].item()/spy['Close'].iloc[0].item()-1)*100, 2), '%')"` for exact numbers.
+> **Disclaimer**: Past performance does not guarantee future results. This is not financial advice. Always paper trade before going live.
 
 ### Equity Curve
 
@@ -38,65 +46,29 @@ A quantitative trading system for US stocks based on RPS (Relative Price Strengt
 
 ![Monthly Returns](assets/monthly_returns.png)
 
-### Trade Records
+---
 
-[Download Trades CSV](assets/trades.csv)
+## Features
 
-## 📁 Directory Structure
+- **RPS Screening** — ranks stocks by 20/60/120-day relative price strength; filters universe to top N% performers
+- **Multi-factor Scoring** — combines RPS rank, volume, and optional fundamental filters (P/E, market cap)
+- **Layered Exit System** — stop loss, trailing stop, MACD death cross, take profit, and time stop
+- **Position Management** — equal-weight sizing with daily buy cap (`max_buy`) and total position limit (`max_own`)
+- **Backtesting Engine** — full historical simulation; outputs equity curve, drawdown chart, and trade log
+- **Live Trading** — Interactive Brokers API integration via `ib_insync`; supports paper and live accounts
+- **Data Management** — SQLite-backed local store with yfinance for full history and daily incremental updates
+- **Daily Automation** — cron-ready `run.py --step all` runs the full pipeline after market close
 
-```
-quant-trade/
-├── README.md
-├── README-zh.md
-├── LICENSE
-├── requirements.txt
-├── assets/                       # Images
-│   ├── equity_curve.png
-│   └── monthly_returns.png
-├── data/                         # Data storage
-│   └── quant_trade/
-│       ├── db/
-│       │   └── market_data.db
-│       ├── logs/
-│       ├── cache/
-│       └── backtest/
-├── tests/                        # Test scripts
-│   ├── test_all.py
-│   ├── test_ibapi.py
-│   └── test_ibsync.py
-└── skills/
-    └── quant-trade/
-        ├── SKILL.md
-        ├── SKILL-zh.md
-        ├── config.yaml
-        ├── config.example.yaml
-        ├── hooks/
-        ├── references/
-        └── scripts/
-            ├── main.py
-            ├── core/
-            │   ├── config.py
-            │   ├── data_manager.py
-            │   ├── stock_pool.py
-            │   ├── rps_calculator.py
-            │   └── factors.py
-            ├── trading/
-            │   ├── ibkr_client.py
-            │   ├── risk_checker.py
-            │   └── stop_loss_monitor.py
-            ├── analysis/
-            │   ├── screener.py
-            │   ├── backtest.py
-            │   ├── generate_report.py
-            │   └── optimize.py
-            └── utils/
-                ├── update_fundamentals.py
-                └── update_fundamentals_history.py
-```
+---
 
-## 🚀 Quick Start
+## Quick Start
 
-### 1. Environment Setup
+### Prerequisites
+
+- Python 3.10+
+- Interactive Brokers TWS or IB Gateway (for live/paper trading only)
+
+### 1. Install
 
 ```bash
 git clone https://github.com/Donvink/quant-trade.git
@@ -108,44 +80,31 @@ conda activate quant-trade
 pip install -r requirements.txt
 ```
 
-### 2. Configuration
+### 2. Configure
 
-Edit `skills/quant-trade/config.yaml`:
+```bash
+cp config.example.yaml config.yaml
+```
+
+Edit `config.yaml` — key parameters:
 
 ```yaml
+screener:
+  rps_threshold: 85       # only stocks in top 15% by RPS
+  max_buy: 3              # max new positions per day
+  max_own: 5              # max total open positions
+
 risk:
   stop_loss_pct: -10
   take_profit_pct: 30
   trailing_stop_pct: 10
-  max_hold_days: 10
-  min_hold_days: 3
-  use_macd_sell: false
-
-screener:
-  rps_threshold: 95
-  rps_periods: [20, 60, 120]
-  max_buy: 3
-  max_own: 5
-  use_fundamentals: false
-
-ibkr:
-  host: "127.0.0.1"  # WSL2 users: use the Windows host IP (e.g. 172.29.80.1)
-  port: 7497          # paper trading port; live trading uses 7496
-  client_id: 1
-  timeout: 30
-
-data_source: "yfinance"
-commission: 0.001
+  max_hold_days: 25
 ```
 
-### 3. Download Historical Data
+### 3. Download Data
 
 ```bash
-# From project root
 python run.py --step update
-
-# Or from the scripts directory
-cd skills/quant-trade/scripts && python main.py --step update
 ```
 
 ### 4. Run Backtest
@@ -156,87 +115,160 @@ python run.py --step backtest
 
 ### 5. Paper Trading
 
-1. Start IBKR TWS/IB Gateway and log in to paper account
-2. Run trading:
+Start IBKR TWS or IB Gateway and log into your paper account, then:
 
 ```bash
-# Dry run (no actual orders)
+# Dry run — logs orders without submitting
 python run.py --step trade --dry-run
 
 # Live paper trading
 python run.py --step trade
 ```
 
-### 6. Daily Automation
+---
 
-Set up cron job (runs after market close):
-
-```bash
-crontab -e
-# Add the following line (runs at 04:30 Monday-Friday, after US market close)
-# Replace /path/to/conda with your actual conda installation path
-30 4 * * 1-5 /path/to/conda/envs/quant-trade/bin/python /path/to/quant-trade/skills/quant-trade/scripts/main.py --step all >> /path/to/quant-trade/logs/daily.log 2>&1
-```
-
-> **Note**: `conda activate` does not work in cron. Use the full path to the Python executable instead. Find it with: `conda activate quant-trade && which python`
-
-## 📖 Command Reference
+## Command Reference
 
 | Command | Description |
 |---------|-------------|
-| `python run.py --step all` | Full workflow (update + screen + trade + monitor) |
-| `python run.py --step update` | Update data only |
-| `python run.py --step screen` | Run screener only |
-| `python run.py --step trade` | Execute trades only |
-| `python run.py --step monitor` | Run stop-loss monitoring only |
-| `python run.py --step backtest` | Run backtest |
-| `--dry-run` | Simulation mode, no actual orders |
-| `--force-refresh` | Force refresh data |
+| `python run.py --step all` | Full pipeline: update → screen → monitor → trade → backtest |
+| `python run.py --step update` | Download / update market data |
+| `python run.py --step screen` | Run RPS screener, write candidates to cache |
+| `python run.py --step trade` | Execute trades based on cached candidates |
+| `python run.py --step monitor` | Run stop-loss checks |
+| `python run.py --step backtest` | Run full historical backtest |
+| `--dry-run` | Simulate orders without submitting |
+| `--force-refresh` | Force re-download of data and stock pool |
 
-## 🔧 Position Management Logic
+---
 
-- **Target Position**: Target position size per stock = Net Asset Value / `max_own`
-- **Daily Purchases**: Maximum `max_buy` new stocks (not currently held)
-- **Capital Allocation**: Proportional allocation when cash is insufficient
-- **Exit Mechanisms**: Stop loss / take profit / time stop / MACD death cross
+## Configuration
 
-## 📈 Backtest Report
+All parameters live in `config.yaml` (gitignored — copy from `config.example.yaml`).
 
-Running backtest outputs:
-- Total return, annualized return, Sharpe ratio
-- Max drawdown, win rate, avg profit/loss
-- Monthly returns table
-- Equity curve chart
-- Drawdown curve chart
+```yaml
+risk:
+  stop_loss_pct: -10          # hard stop
+  take_profit_pct: 30         # profit target
+  trailing_stop_pct: 10       # trailing stop from peak
+  max_hold_days: 25           # time stop
+  min_hold_days: 3            # min hold before any exit
+  use_macd_sell: false        # exit on MACD death cross
 
-## ⚠️ Important Notes
+screener:
+  rps_threshold: 85           # percentile cutoff (85 = top 15%)
+  rps_periods: [20, 60, 120]  # lookback windows
+  max_buy: 3                  # new buys per day
+  max_own: 5                  # max open positions
+  use_fundamentals: false     # add P/E and market cap filters
+  order_by: "total_score"     # rank by: total_score | turnover | turnover_avg
 
-1. **Paper trading first**: Always test with paper trading before live trading
-2. **Data quality**: yfinance is free but may have delays or missing data
-3. **Risk control**: Past performance doesn't guarantee future results
-4. **Network requirements**: Daily updates require stable internet connection
+ibkr:
+  host: "127.0.0.1"           # WSL2: use Windows host IP
+  port: 7497                  # 7497 = paper, 7496 = live
+  client_id: 1
 
-## 📚 Dependencies
+data_source: "yfinance"       # yfinance | polygon
+commission: 0.001             # 0.1% per trade
+```
 
-- Python 3.10+
-- pandas, numpy, requests, yfinance
-- ib_insync (IBKR API)
-- pandas_ta (technical indicators)
-- matplotlib (charts)
-- tqdm (progress bar)
+---
 
-## 🤝 Contributing
+## Architecture
 
-Issues and Pull Requests are welcome.
+```
+quant-trade/
+├── quant_trade/
+│   ├── core/
+│   │   ├── config.py          # all parameters, loaded from config.yaml
+│   │   ├── data_manager.py    # SQLite store, yfinance download, daily update
+│   │   ├── rps_calculator.py  # RPS ranking across N-day windows
+│   │   ├── factors.py         # volume, fundamental scoring
+│   │   ├── stock_pool.py      # S&P 500 and large-cap universe
+│   │   └── ticker_fetcher.py  # full US market ticker list
+│   ├── analysis/
+│   │   ├── screener.py        # RPS screener, writes candidates to cache
+│   │   ├── backtest.py        # historical simulation engine
+│   │   ├── generate_report.py # equity curve, monthly returns chart
+│   │   └── optimize.py        # parameter grid search
+│   ├── trading/
+│   │   ├── ibkr_client.py     # IBKR order execution via ib_insync
+│   │   ├── risk_checker.py    # pre-trade risk validation
+│   │   └── stop_loss_monitor.py
+│   └── utils/
+│       └── update_fundamentals.py
+├── scripts/
+│   └── daily_run.sh           # cron wrapper
+├── tests/
+├── config.example.yaml
+├── run.py                     # entry point
+└── requirements.txt
+```
 
-## 📄 License
+### Position Sizing
 
-MIT License
+- Each stock targets `net_asset_value / max_own` in market value
+- Daily buys capped at `max_buy` new positions
+- Cash shortfall distributes proportionally across candidates
 
-## 🎯 Roadmap
+### Exit Logic (priority order)
 
-- [ ] Support A-shares / Hong Kong stocks
-- [ ] Add more technical indicators
-- [ ] Machine learning selection models
-- [ ] Web visualization dashboard
+1. Hard stop loss (`stop_loss_pct`)
+2. Trailing stop from peak (`trailing_stop_pct`)
+3. Take profit (`take_profit_pct`)
+4. MACD death cross (optional, `use_macd_sell: true`)
+5. Time stop (`max_hold_days`)
 
+---
+
+## Daily Automation
+
+```bash
+crontab -e
+# Run after US market close (04:30 UTC Mon-Fri)
+30 4 * * 1-5 /path/to/conda/envs/quant-trade/bin/python /path/to/quant-trade/run.py --step all >> /path/to/quant-trade/data/logs/daily.log 2>&1
+```
+
+> `conda activate` does not work in cron — use the full Python path. Find it with: `conda activate quant-trade && which python`
+
+---
+
+## Dependencies
+
+- `pandas`, `numpy` — data processing
+- `yfinance` — market data
+- `ib_insync` — Interactive Brokers API
+- `pandas_ta` — technical indicators (MACD etc.)
+- `matplotlib` — backtest charts
+- `tqdm` — progress bars
+- `pyyaml` — config parsing
+
+---
+
+## Important Notes
+
+1. **Paper trade first** — validate with a paper account before using real capital
+2. **Data quality** — yfinance is free but may have gaps; for production consider Polygon.io (`polygon_api_key` in config)
+3. **Backtest limitations** — results use adjusted close prices; slippage and partial fills are not modeled
+4. **IBKR requirement** — live/paper trading requires an Interactive Brokers account with TWS/IB Gateway running locally
+
+---
+
+## Roadmap
+
+- [ ] Web dashboard for real-time portfolio monitoring
+- [ ] Polygon.io as primary data source option
+- [ ] A-share / Hong Kong stock support
+- [ ] ML-based factor weighting
+
+---
+
+## Contributing
+
+Issues and pull requests welcome.
+
+---
+
+## License
+
+MIT License © [Leo Zhong](https://github.com/Donvink)

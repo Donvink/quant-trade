@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
-# scripts/config.py
 import os
 import yaml
 from pathlib import Path
 
 # ----------------------------- 路径定位 -----------------------------
-# 当前文件: scripts/core/config.py
-SCRIPT_DIR = Path(__file__).parent                    # scripts/core/
-SCRIPTS_DIR = SCRIPT_DIR.parent                       # scripts/
-SKILL_ROOT = SCRIPTS_DIR.parent                       # skills/quant-trade/
-PROJECT_ROOT = SKILL_ROOT.parent.parent               # quant-trade/（项目根）
+# 当前文件: quant_trade/core/config.py
+SCRIPT_DIR = Path(__file__).parent                    # quant_trade/core/
+SCRIPTS_DIR = SCRIPT_DIR.parent                       # quant_trade/
+PROJECT_ROOT = SCRIPTS_DIR.parent                     # quant-trade/（项目根）
 
 # ----------------------------- 数据目录 -----------------------------
 # 优先使用环境变量，否则使用项目内 data/quant_trade
@@ -32,7 +30,7 @@ TIKERS_DIR.mkdir(parents=True, exist_ok=True)
 WAREHOUSE_DIR.mkdir(parents=True, exist_ok=True)
 
 # ----------------------------- 配置文件 -----------------------------
-CONFIG_FILE = SKILL_ROOT / "config.yaml"
+CONFIG_FILE = PROJECT_ROOT / "config.yaml"
 
 # 默认配置（硬编码）
 DEFAULTS = {
